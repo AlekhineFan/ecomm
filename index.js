@@ -1,6 +1,7 @@
 const express = require("express");
 const app = express();
 const bodyParser = require("body-parser");
+const repo = require("./repositories/users.js");
 app.use(bodyParser.urlencoded({ extended: true }));
 
 app.get("/", (req, res) => {
