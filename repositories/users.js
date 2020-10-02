@@ -1,6 +1,6 @@
 const fs = require("fs");
 const crypto = require("crypto");
-const { report } = require("process");
+
 class UsersRepository {
   constructor(filename) {
     if (!filename) {
@@ -35,12 +35,53 @@ class UsersRepository {
   randomId() {
     return crypto.randomBytes(4).toString("hex");
   }
+  async getOne(id) {
+    const records = await this.getAll();
+    return records.find((record) => record.id === id);
+  }
+  async delete(id) {
+    const records = await this.getAll();
+    const filtered = records.filter((record) => record.id !== id);
+    await this.writeAll(filtered);
+  }
+  async update(id, attributes) {
+    const records = await this.getAll();
+    const record = records.find((record) => record.id === id);
+    if (!record) {
+      throw new Error(`Record with id ${id} not found`);
+    }
+    Object.assign(record, attributes);
+    await this.writeAll(records);
+  }
+  async getOneBy(filters) {
+    const records = await this.getAll();
+    for (let record of records) {
+      let found = true;
+      for (let key in filters) {
+        if (record[key] !== filters[key]) {
+          found = false;
+        }
+      }
+      if (found) {
+        return record;
+      }
+    }
+  }
 }
 
-const test = async () => {
+/*const test = async () => {
   const repo = new UsersRepository("users.json");
-  repo.create({ email: "test@test.com", password: "password" });
-  const users = await repo.getAll();
-  console.log(users);
+  //repo.create({ email: "test@test.com", password: "password" });
+  //const users = await repo.getAll();
+
+  //const user = await repo.getOne("dc4c3ea0");
+  //await repo.delete("6f353101");
+  //console.log(user);
+  const user = await repo.getOneBy({
+    id: "fc2a8963",
+  });
+  console.log(user);
 };
-test();
+test();*/
+
+module.exports = new UsersRepository("users.json");
