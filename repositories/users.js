@@ -15,11 +15,13 @@ class UsersRepository {
       fs.writeFileSync(this.filename, "[]");
     }
   }
+
   async getAll() {
     return JSON.parse(
       await fs.promises.readFile(this.filename, { encoding: "utf8" })
     );
   }
+
   async create(attributes) {
     attributes.id = this.randomId();
 
@@ -33,8 +35,16 @@ class UsersRepository {
     };
     records.push(record);
     await this.writeAll(records);
-    return attributes;
+    return record;
   }
+
+  async comparePasswords(savedPass, supplied) {
+    const [hashed, salt] = savedPass.split(".");
+    const hashedSuppliedBuffer = await scrypt(supplied, salt, 64);
+
+    return hashed === hashedSuppliedBuffer.toString("hex");
+  }
+
   async writeAll(records) {
     await fs.promises.writeFile(
       this.filename,
@@ -44,15 +54,18 @@ class UsersRepository {
   randomId() {
     return crypto.randomBytes(4).toString("hex");
   }
+
   async getOne(id) {
     const records = await this.getAll();
     return records.find((record) => record.id === id);
   }
+
   async delete(id) {
     const records = await this.getAll();
     const filtered = records.filter((record) => record.id !== id);
     await this.writeAll(filtered);
   }
+
   async update(id, attributes) {
     const records = await this.getAll();
     const record = records.find((record) => record.id === id);
@@ -62,6 +75,7 @@ class UsersRepository {
     Object.assign(record, attributes);
     await this.writeAll(records);
   }
+
   async getOneBy(filters) {
     const records = await this.getAll();
     for (let record of records) {
