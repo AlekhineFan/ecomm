@@ -11,7 +11,8 @@ module.exports = {
       if (existingUser) {
         throw new Error("Email address is already in use");
       }
-    }),
+    })
+    .withMessage("Please provide a valid email"),
   requirePassword: check("password").trim().isLength({ min: 4, max: 20 }),
   requirePasswordConfirmed: check("passwordConfirmation")
     .trim()

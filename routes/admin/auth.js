@@ -18,6 +18,9 @@ router.post(
   async (req, res) => {
     const errors = validationResult(req);
     console.log(errors);
+    if (!errors.isEmpty()) {
+      return res.send(signupTemplate({ req, errors }));
+    }
     const { email, password, passwordConfirmation } = req.body;
 
     const user = await users.create({ email, password });
@@ -36,18 +39,42 @@ router.get("/signin", (req, res) => {
   res.send(signinTemplate());
 });
 
-router.post("/signin", async (req, res) => {
-  const { email, password } = req.body;
-  const user = await users.getOneBy({ email });
-  if (!user) {
-    return res.send("email not found");
+router.post(
+  "/signin",
+  [
+    check("email")
+      .trim()
+      .normalizeEmail()
+      .isEmail()
+      .withMessage("Please provide a valid email")
+      .custom(async () => {
+        const user = await users.getOneBy({ email });
+        if (!user) {
+          throw new Error("Email not found");
+        }
+      }),
+    check("password")
+      .trim()
+      .custom(async (password, { req }) => {
+        const user = await users.getOneBy({ email: req.body.email });
+        if (!user) {
+          throw new Error("Invalid password");
+        }
+        const validPass = await users.comparePasswords(user.password, password);
+        if (!validPass) {
+          throw new Error("Invalid password");
+        }
+      }),
+  ],
+  async (req, res) => {
+    const errors = validationResult(req);
+    console.log(errors);
+    const { email } = req.body;
+    const user = await users.getOneBy({ email });
+
+    req.session.userId = user.id;
+    res.send("you have signed in");
   }
-  const validPass = await users.comparePasswords(user.password, password);
-  if (!validPass) {
-    return res.send("invalid password");
-  }
-  req.session.userId = user.id;
-  res.send("you have signed in");
-});
+);
 
 module.exports = router;
