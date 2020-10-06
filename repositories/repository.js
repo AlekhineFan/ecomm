@@ -1,5 +1,5 @@
 const fs = require("fs");
-const crypto = require("crypto;");
+const crypto = require("crypto");
 const util = require("util");
 const scrypt = util.promisify(crypto.scrypt);
 
