@@ -3,9 +3,16 @@ const { check, validationResult } = require("express-validator");
 const users = require("../../repositories/users");
 const signupTemplate = require("../../views/admin/auth/signup");
 const signinTemplate = require("../../views/admin/auth/signin");
-const { requireEmail } = require("./validators");
-const { requirePassword } = require("./validators");
-const { requirePasswordConfirmed } = require("./validators");
+const {
+  requireEmail,
+  requirePassword,
+  requirePasswordConfirmed,
+  requireEmailExists,
+  requireValidPassword,
+} = require("./validators");
+const {} = require("./validators");
+const {} = require("./validators");
+
 const router = express.Router();
 
 router.get("/signup", (req, res) => {
@@ -36,39 +43,17 @@ router.get("/signout", (req, res) => {
 });
 
 router.get("/signin", (req, res) => {
-  res.send(signinTemplate());
+  res.send(signinTemplate({}));
 });
 
 router.post(
   "/signin",
-  [
-    check("email")
-      .trim()
-      .normalizeEmail()
-      .isEmail()
-      .withMessage("Please provide a valid email")
-      .custom(async () => {
-        const user = await users.getOneBy({ email });
-        if (!user) {
-          throw new Error("Email not found");
-        }
-      }),
-    check("password")
-      .trim()
-      .custom(async (password, { req }) => {
-        const user = await users.getOneBy({ email: req.body.email });
-        if (!user) {
-          throw new Error("Invalid password");
-        }
-        const validPass = await users.comparePasswords(user.password, password);
-        if (!validPass) {
-          throw new Error("Invalid password");
-        }
-      }),
-  ],
+  [requireEmailExists, requireValidPassword],
   async (req, res) => {
     const errors = validationResult(req);
-    console.log(errors);
+    if (!errors.isEmpty()) {
+      return res.send(signinTemplate({ errors }));
+    }
     const { email } = req.body;
     const user = await users.getOneBy({ email });
 

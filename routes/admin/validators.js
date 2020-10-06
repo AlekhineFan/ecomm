@@ -22,4 +22,27 @@ module.exports = {
         throw new Error("Passwords must match");
       }
     }),
+  requireEmailExists: check("email")
+    .trim()
+    .normalizeEmail()
+    .isEmail()
+    .withMessage("Please provide a valid email")
+    .custom(async (email) => {
+      const user = await users.getOneBy({ email });
+      if (!user) {
+        throw new Error("Email not found");
+      }
+    }),
+  requireValidPassword: check("password")
+    .trim()
+    .custom(async (password, { req }) => {
+      const user = await users.getOneBy({ email: req.body.email });
+      if (!user) {
+        throw new Error("Invalid password");
+      }
+      const validPass = await users.comparePasswords(user.password, password);
+      if (!validPass) {
+        throw new Error("Invalid password");
+      }
+    }),
 };
